@@ -2,30 +2,21 @@
 
 namespace ContactCatalog1
 {
-    internal class Program
+    public class Program
     {
         static void Main(string[] args)
         {
-            
+
             var byId = new Dictionary<int, Contact>();
             var emails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var manager = new ContactManager();
 
-            AddContact(new Contact(1, "Lisa Ebbhagen", "lisa.ebbhagen@chasacademy.se", "friend, school, children"), byId, emails);
-            AddContact(new Contact(2, "Liza Hjortling", "liza.hjortling@chasacademy.se", "friend, school, cat, children"), byId, emails);
-            AddContact(new Contact(3, "Robin Grahn", "robin.grahn@chasacademy.se", "friend, school, c-sharp"), byId, emails);
-            AddContact(new Contact(4, "Rolf Andersson", "rolf.andersson@chasacademy.se", "friend, school, bank, children"), byId, emails);
+            manager.AddContact(new Contact(1, "Lisa Ebbhagen", "lisa.ebbhagen@chasacademy.se", "friend, school, children"));
+            manager.AddContact(new Contact(2, "Liza Hjortling", "liza.hjortling@chasacademy.se", "friend, school, cat, children"));
+            manager.AddContact(new Contact(3, "Robin Grahn", "robin.grahn@chasacademy.se", "friend, school, c-sharp"));
+            manager.AddContact(new Contact(4, "Rolf Andersson", "rolf.andersson@chasacademy.se", "friend, school, bank, children"));
 
-            Console.WriteLine("=================================================");
-            Console.WriteLine("Välkommen till kontaktkatalogen");
-            Console.WriteLine("-------------------------------------------------");
-            Console.WriteLine("Välj ett av följande alternativ: ");
-            Console.WriteLine("-------------------------------------------------\n");
-            Console.WriteLine("1. Lägg till");
-            Console.WriteLine("2. Lista");
-            Console.WriteLine("3. Sök (Namn innehåller)");
-            Console.WriteLine("4. Filtrera via Tag");
-            Console.WriteLine("5. Exportera CSV");
-            Console.WriteLine("6. Avsluta");
+            ShowMenu();
 
             bool running = true;
             while (running)
@@ -58,7 +49,7 @@ namespace ContactCatalog1
 
                         try
                         {
-                            AddContact(newContact, byId, emails);
+                            manager.AddContact(newContact);
                             Console.WriteLine("Kontakt tillagd!");
                         }
                         catch (InvalidEmailException)
@@ -69,9 +60,9 @@ namespace ContactCatalog1
                         {
                             Console.WriteLine($"E-postadressen finns redan: {email}");
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            Console.WriteLine($"Något gick fel");
+                            Console.WriteLine($"Fel: {ex.Message}");
                         }
                         break;
 
@@ -85,7 +76,8 @@ namespace ContactCatalog1
                     case "3":
                         Console.Write("Ange sökterm för namn: ");
                         string inputName = Console.ReadLine();
-                        var hitsByName = byId.Values.Where(c => c.Name.Contains(inputName, StringComparison.OrdinalIgnoreCase)).OrderBy(c => c.Name).ToList();
+
+                        var hitsByName = manager.SearchByName(inputName);
                         if (hitsByName.Any())
                         {
                             Console.WriteLine("Sökträffar:");
@@ -102,7 +94,7 @@ namespace ContactCatalog1
                         //sök o filtrera via tagg: 
                         Console.Write("Filtrera via tagg: ");
                         string inputTag = Console.ReadLine();
-                        var hitsByTag = byId.Values.Where(c => c.Tags.Contains(inputTag, StringComparison.OrdinalIgnoreCase)).OrderBy(c => c.Tags).ToList();
+                        var hitsByTag = manager.FilterByTag(inputTag);
                         if (hitsByTag.Any())
                         {
                             Console.WriteLine("Sökträffar:");
@@ -115,22 +107,9 @@ namespace ContactCatalog1
                         else Console.WriteLine("Inga träffar.");
                         break;
 
-                    case "5":
+                    case "5":                       
 
-                        string ToCsv(IEnumerable<Contact> contacts)
-                        {
-                            var sb = new StringBuilder();
-                            sb.AppendLine("Id,Name,Email,Tags");
-                            foreach (var c in contacts)
-                            {
-                                var tags = string.Join('|', c.Tags);
-                                sb.AppendLine($"{c.Id},{c.Name},{c.Email},{tags}");
-                            }
-                            return sb.ToString();
-                        }
-
-                        string csvData = ToCsv(byId.Values);
-
+                        string csvData = manager.ToCsv(byId.Values);
                         string filePath = "kontakter.csv";
 
                         try
@@ -140,7 +119,7 @@ namespace ContactCatalog1
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Fel vid filskrivning. Ingen fil skapad.");
+                            Console.WriteLine($"Fel: {ex.Message}");
                         }
                         break;
 
@@ -156,23 +135,21 @@ namespace ContactCatalog1
                 }
             }
 
-
-            void AddContact(Contact c, Dictionary<int, Contact> byId, HashSet<string> emails)
-            {
-                if (!IsValidEmail(c.Email)) throw new InvalidEmailException(c.Email);
-                if (!emails.Add(c.Email)) throw new DuplicateEmailException(c.Email);
-                byId.Add(c.Id, c);
-            }
         }
 
-        static bool IsValidEmail(string email)
+        static void ShowMenu()
         {
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch { return false; }
+            Console.WriteLine("=================================================");
+            Console.WriteLine("Välkommen till kontaktkatalogen");
+            Console.WriteLine("-------------------------------------------------");
+            Console.WriteLine("Välj ett av följande alternativ: ");
+            Console.WriteLine("-------------------------------------------------\n");
+            Console.WriteLine("1. Lägg till");
+            Console.WriteLine("2. Lista");
+            Console.WriteLine("3. Sök (Namn innehåller)");
+            Console.WriteLine("4. Filtrera via Tag");
+            Console.WriteLine("5. Exportera CSV");
+            Console.WriteLine("6. Avsluta");
         }
     }
 }
