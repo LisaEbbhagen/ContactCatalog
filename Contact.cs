@@ -34,21 +34,6 @@ namespace ContactCatalog1
         //    emails.Add(contacts.Email)
 
 
-        public void PrintList()
-        {
-
-        }
-
-        public void SearchName()
-        {
-
-        }
-
-        public void FilterByTag()
-        {
-
-        }
-
 
     }
 }
