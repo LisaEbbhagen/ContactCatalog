@@ -1,61 +1,89 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ContactCatalog1
 {
-    public class ContactManager
+    //Handling all contactlogics
+    //Validates and store contacts
+    public class ContactManager : IContactRepository
     {
-        private readonly Dictionary<int, Contact> _byId = new();
+        private readonly Dictionary<int, Contact> _contactsById = new();
         private readonly HashSet<string> _emails = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ILogger<ContactManager> _logger;
+        private ContactValidator _validator; 
 
-
-
-        public void AddContact(Contact c)
+        public ContactManager(ILogger<ContactManager> logger)
         {
-            if (!IsValidEmail(c.Email)) throw new InvalidEmailException(c.Email);
-            if (!_emails.Add(c.Email)) throw new DuplicateEmailException(c.Email);
-            _byId.Add(c.Id, c);
+            _logger = logger;
         }
 
-        public List<Contact> SearchByName(string inputName)
+        public void SetValidator(ContactValidator validator)
         {
-            return _byId.Values
-                .Where(c => c.Name.Contains(inputName, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(c => c.Name)
-                .ToList();
+            _validator = validator;
         }
 
-        public List<Contact> FilterByTag(string inputTag)
+        public void Save(Contact contact)
         {
-            return _byId.Values
-                .Where(c => c.Tags.Contains(inputTag, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(c => c.Tags)
-                .ToList();
+            _contactsById[contact.Id] = contact;
+            _emails.Add(contact.Email);
         }
-                        
-//Private because its only used internal
-private bool IsValidEmail(string email)
+
+        public IEnumerable<Contact> GetAll()
+        {
+            return _contactsById.Values;
+        }
+
+        public void AddContact(Contact contact)
         {
             try
             {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
+                _validator.Validate(contact);
+                Save(contact);
+                _logger.LogInformation("Kontakt sparad: {Name}", contact.Name);
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fel vid sparande av kontakt.");
+                throw;
+            }
+        }
+
+            //_validator.Validate(contact); // kastar exception om något är fel
+
+            //_contactsById[contact.Id] = contact;
+            //_emails.Add(contact.Email);
+
+        public IEnumerable<Contact> SearchByName(string name)
+        {
+            return _contactsById.Values
+                .Where(c => c.Name
+                .Contains(name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public IEnumerable<Contact> FilterByTag(string tag)
+        {
+            return _contactsById.Values
+                .Where(c => c.Tags.Split(',')
+                .Select(t => t.Trim())
+                .Contains(tag, StringComparer.OrdinalIgnoreCase));
         }
 
         public string ToCsv(IEnumerable<Contact> contacts)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Id,Name,Email,Tags");
+            sb.AppendLine("Id,Namn,Email,Taggar");
+
             foreach (var c in contacts)
             {
-                var tags = string.Join('|', c.Tags);
-                sb.AppendLine($"{c.Id},{c.Name},{c.Email},{tags}");
+                sb.AppendLine($"{c.Id},{c.Name},{c.Email},{c.Tags}");
             }
+
             return sb.ToString();
         }
     }
