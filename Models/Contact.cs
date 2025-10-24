@@ -4,15 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ContactCatalog1
+namespace ContactCatalog1.Models
 {
     public class Contact
     {
+
+        //Properties thats needed when a new Contact is created
         public int Id { get; set; }
         public string Name { get; set; }
         public string Email { get; set; }
         public string Tags { get; set; }
 
+        //Constructor
         public Contact(int id, string name, string email, string tags)
         {
             Id = id;
@@ -20,20 +23,5 @@ namespace ContactCatalog1
             Email = email;
             Tags = tags;
         }
-
-
-        //lägg till Microsoft.Extensions.Logging ?
-
-
-
-        //public Dictionary<int, Contact> contactRegister = contacts.ToDictionary(c => c.Id, c => c);
-
-
-
-        //public HashSet<string> allEmail = new HashSet<string>();
-        //    emails.Add(contacts.Email)
-
-
-
     }
 }

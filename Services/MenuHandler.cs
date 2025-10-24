@@ -1,4 +1,5 @@
-﻿using ContactCatalog1;
+﻿using ContactCatalog1.Models;
+using ContactCatalog1.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,17 +7,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace ContactCatalog1
+namespace ContactCatalog1.Services
 {
     //Handling all interactions with user
-   
     public class MenuHandler
     {
 
-        private readonly ContactManager _manager;
-        public MenuHandler(ContactManager manager)
+        private readonly ContactService _service;
+        public MenuHandler(ContactService service)
         {
-            _manager = manager;
+            _service = service;
         }
 
         public void Run()
@@ -32,7 +32,7 @@ namespace ContactCatalog1
                 switch (choice)
                 {
                     case "1":
-                        AddContact();
+                        PromptContact();
                         Pause();
                         break;
 
@@ -63,6 +63,7 @@ namespace ContactCatalog1
 
                     default:
                         Console.WriteLine("Ogiltigt val, försök igen.\n");
+                        Console.WriteLine("Tryck på valfri tangent för att försöka igen...\n");
                         Console.ReadKey();
                         break;
                 }
@@ -85,18 +86,18 @@ namespace ContactCatalog1
         
         private void SeedContacts()
         {
-            _manager.AddContact(new Contact(1, "Lisa Ebbhagen", "lisa.ebbhagen@chasacademy.se", "friend, school, children"));
-            _manager.AddContact(new Contact(2, "Liza Hjortling", "liza.hjortling@chasacademy.se", "friend, school, cat, children"));
-            _manager.AddContact(new Contact(3, "Robin Grahn", "robin.grahn@chasacademy.se", "friend, school, c-sharp"));
-            _manager.AddContact(new Contact(4, "Rolf Andersson", "rolf.andersson@chasacademy.se", "friend, school, bank, children"));
+            _service.AddContact(new Contact(1, "Lisa Ebbhagen", "lisa.ebbhagen@chasacademy.se", "friend, school, children"));
+            _service.AddContact(new Contact(2, "Liza Hjortling", "liza.hjortling@chasacademy.se", "friend, school, cat, children"));
+            _service.AddContact(new Contact(3, "Robin Grahn", "robin.grahn@chasacademy.se", "friend, school, c-sharp"));
+            _service.AddContact(new Contact(4, "Rolf Andersson", "rolf.andersson@chasacademy.se", "friend, school, bank, children"));
         }    
 
-        public void AddContact()
+        public void PromptContact()
         {
             Console.Write("Ange ID: ");
             string inputID = Console.ReadLine();
             int id;
-            if (!int.TryParse(inputID, out id))
+            if (!int.TryParse(inputID, out id) || string.IsNullOrEmpty(inputID))
             {
                 Console.WriteLine("Ogiltigt ID. Ange ett heltal.");
                 Console.ReadKey();
@@ -105,18 +106,27 @@ namespace ContactCatalog1
 
             Console.Write("Ange namn: ");
             string name = Console.ReadLine();
-
+            if (string.IsNullOrEmpty(name))
+            {
+                Console.WriteLine("Namn krävs.");
+                Console.ReadKey();
+                return;
+            }
             Console.Write("Ange e-post: ");
             string email = Console.ReadLine();
-
+            if (string.IsNullOrEmpty(email))
+            {
+                Console.WriteLine("Email krävs.");
+                Console.ReadKey();
+                return;
+            }
+            
             Console.Write("Ange taggar (kommaseparerade): ");
             string tags = Console.ReadLine();
 
-            //Contact newContact = new Contact(id, name, email, tags);
-
             try
             {
-                _manager.AddContact(new Contact(id, name, email, tags));
+                _service.AddContact(new Contact(id, name, email, tags));
                 Console.WriteLine("Kontakt tillagd!");
             }
             catch (InvalidEmailException)
@@ -135,37 +145,36 @@ namespace ContactCatalog1
 
         private void ListContacts()
         {
-            //Snygga till alla listutskrifter 
-            //Console.WriteLine("\nResultat:");
-            //Console.WriteLine("--------------------------------------------------");
-            //Console.WriteLine($"{"Kontonummer",-15} {"Ägare",-20} {"Saldo",10}"); // -15 -20=Vänsterjustera och reservera 15 resp 20 tecken, 10=högerjustera o reservera 10 tecken. :C = formaterar som valuta
-            //Console.WriteLine("--------------------------------------------------");
 
-            //foreach (var acc in results)
-            //{
-            //    Console.WriteLine($"{acc.AccountNumber,-15} {acc.Owner.Name,-20} {acc.Balance,10:C}");
-            //}
-            foreach (var contact in _manager.GetAll())
+            Console.WriteLine("\nKontakter:");
+            Console.WriteLine("-----------------------------------------------------------------------------------------------");
+            Console.WriteLine($"{"Id",-5} {"Namn",-18} {"Email",-32} {"Taggar", -20}"); 
+            Console.WriteLine("-----------------------------------------------------------------------------------------------");
+            foreach (var contact in _service.GetAll())
             {
-                Console.WriteLine($"ID: {contact.Id} | Namn: {contact.Name} | Email: {contact.Email} | Taggar: {contact.Tags}");
+                Console.WriteLine($"{contact.Id, -5} | {contact.Name, -15} | {contact.Email, -30} | {contact.Tags, -20}");
             }
+            Console.WriteLine("-----------------------------------------------------------------------------------------------");
         }
 
         public void SearchByName()
         {
             Console.Write("Ange sökterm för namn: ");
             string inputName = Console.ReadLine();
-            var hitsByName = _manager.SearchByName(inputName);
+            var hitsByName = _service.SearchByName(inputName);
             
             if (hitsByName.Any())
             {
                 Console.WriteLine("Sökträffar:");
+                Console.WriteLine("-----------------------------------------------------------------------------------------------");
+                Console.WriteLine($"{"Id",-5} {"Namn",-18} {"Email",-32} {"Taggar",-20}");
+                Console.WriteLine("-----------------------------------------------------------------------------------------------");
                 foreach (var h in hitsByName)
                 {
-                    Console.WriteLine($"- ID: {h.Id} | Namn: {h.Name} | Email: {h.Email} | Taggar: {h.Tags}");
+                    Console.WriteLine($"{h.Id,-5} | {h.Name,-15} | {h.Email,-30} | {h.Tags,-20}");
                 }
+                Console.WriteLine("-----------------------------------------------------------------------------------------------");
             }
-
             else Console.WriteLine("Inga träffar.");
         }
 
@@ -173,30 +182,27 @@ namespace ContactCatalog1
         {
             Console.Write("Filtrera via tagg: ");
             string inputTag = Console.ReadLine();
-            var hitsByTag = _manager.FilterByTag(inputTag);
+            var hitsByTag = _service.FilterByTag(inputTag);
             if (hitsByTag.Any())
             {
                 Console.WriteLine("Sökträffar:");
+                Console.WriteLine("-----------------------------------------------------------------------------------------------");
+                Console.WriteLine($"{"Id",-5} {"Namn",-18} {"Email",-32} {"Taggar",-20}");
+                Console.WriteLine("-----------------------------------------------------------------------------------------------");
                 foreach (var h in hitsByTag)
                 {
-                    Console.WriteLine($"ID: {h.Id} | Namn: {h.Name} | Email: {h.Email} | Taggar: {h.Tags}");
+                    Console.WriteLine($"{h.Id,-5} | {h.Name,-15} | {h.Email,-30} | {h.Tags,-20}");
                 }
+                Console.WriteLine("-----------------------------------------------------------------------------------------------");
             }
 
             else Console.WriteLine("Inga träffar.");
         }
 
-        public string ExportToCsv()
+        public void ExportToCsv()
         {
-
-            var sb = new StringBuilder();
-            sb.AppendLine("Id,Name,Email,Tags");
-            foreach (var c in _manager.GetAll())
-            {
-                var tags = string.Join('|', c.Tags);
-                sb.AppendLine($"{c.Id},{c.Name},{c.Email},{tags}");
-            }
-            return sb.ToString();
+            var csv = _service.ToCsv(_service.GetAll());
+            Console.WriteLine(csv);
         }
 
 
@@ -204,30 +210,8 @@ namespace ContactCatalog1
         {
             Console.WriteLine("\nTryck på valfri tangent för att fortsätta...");
             Console.ReadKey();
-            Console.Clear(); // Rensar konsolen för en fräsch meny
+            Console.Clear(); 
         }
-
-        //public List<Contact> SearchByName(string inputName)
-        //{
-        //    return _byId.Values
-        //        .Where(c => c.Name.Contains(inputName, StringComparison.OrdinalIgnoreCase))
-        //        .OrderBy(c => c.Name)
-        //        .ToList();
-        //}
-
-        //public List<Contact> FilterByTag(string inputTag)
-        //{
-        //    return _byId.Values
-        //        .Where(c => c.Tags.Contains(inputTag, StringComparison.OrdinalIgnoreCase))
-        //        .OrderBy(c => c.Tags)
-        //        .ToList();
-        //}
-
-        ////Private because its only used internal
-        //
-
-
-
     }
 
 }

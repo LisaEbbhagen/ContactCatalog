@@ -1,11 +1,11 @@
-﻿using ContactCatalog1;
+﻿using ContactCatalog1.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ContactCatalog1
+namespace ContactCatalog1.Repositories
 {
     public interface IContactRepository
     {

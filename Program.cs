@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ContactCatalog1.Services;
+using ContactCatalog1.Validators;
+using Microsoft.Extensions.Logging;
 using System.Text;
 
 namespace ContactCatalog1
@@ -11,27 +13,24 @@ namespace ContactCatalog1
             using var loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder.AddConsole();
-                builder.SetMinimumLevel(LogLevel.Information);
             });
 
-            var logger = loggerFactory.CreateLogger<ContactManager>();
+            var logger = loggerFactory.CreateLogger<ContactService>();
+            logger.LogInformation("Programmet startar");
 
-            // Create ContactManager (that stores contacts)
-            var manager = new ContactManager(logger);
+            // Create service (that store contacts)
+            var service = new ContactService(logger);
 
-            // Skapa validator och koppla till manager
-            var validator = new ContactValidator(manager); // manager fungerar som repository
+            // Create validator (service works as a repository)
+            var validator = new ContactValidator(service); 
 
-            // Koppla validator till manager
-            manager.SetValidator(validator); // Du behöver lägga till denna metod i ContactManager
+            // Connect validator with service
+            service.SetValidator(validator); 
 
-            // Starta meny
-            var menu = new MenuHandler(manager);
+            // Start menu
+            var menu = new MenuHandler(service);
             menu.Run();
 
         }
     }
 }
-//var contactsById = new Dictionary<int, Contact>();
-//var emails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-//var repo = new SimpleRepository(contactsById, emails);
