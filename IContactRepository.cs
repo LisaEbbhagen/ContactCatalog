@@ -10,7 +10,7 @@ namespace ContactCatalog1
     public interface IContactRepository
     {
         //Moqed repository
-        void Save(Contact contact);
+        void Save(Contact contact); //Ser annorlunda ut hos Malin-.-
       
         IEnumerable<Contact> GetAll();
     }
