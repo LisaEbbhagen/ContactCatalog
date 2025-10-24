@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ContactCatalog1
+namespace ContactCatalog1.Validators
 {
     //Exception is already built in in .NET as a baseclass
     public class InvalidEmailException : Exception
