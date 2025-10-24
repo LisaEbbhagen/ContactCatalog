@@ -8,7 +8,6 @@ namespace ContactCatalog1.Models
 {
     public class Contact
     {
-
         //Properties thats needed when a new Contact is created
         public int Id { get; set; }
         public string Name { get; set; }
